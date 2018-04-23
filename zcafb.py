@@ -29,25 +29,27 @@ args = parser.parse_args()
 
 def rename_folder(c, undo):
     print "Renaming folders..."
-    for row in c.execute('SELECT * FROM ZPATIENTINFO'):
+    for row in c.execute('SELECT ZPATIENTID, ZFIRSTNAME, ZLASTNAME, ZGENDER, strftime("%Y-%m-%d",ZDOB), ZDOB, strftime("%Y-%m-%d",\'now\') FROM ZPATIENTINFO'):
+        original_path=row[0]
+        human_path=", ".join([row[2],row[1],row[3], "(" + time.strftime("%Y-%m-%d", time.localtime(row[5]+978307200)) + ")",row[0]])
         if undo:
             src = os.sep.join(
-                [path, ", ".join([row[12], str(row[8]), row[9]])])
+                [path, human_path])
 
-            dst = os.sep.join([path, row[13]])
+            dst = os.sep.join([path, original_path])
             if args.archive:
                 src1 = os.sep.join(
-                    [args.archive, ", ".join([row[12], str(row[8]), row[9]])])
-                dst1 = os.sep.join([args.archive, row[13]])
+                    [args.archive,human_path])
+                dst1 = os.sep.join([args.archive, original_path])
 
         else:
             dst = os.sep.join(
-                [path, ", ".join([row[12], str(row[8]), row[9]])])
-            src = os.sep.join([path, row[13]])
+                [path, human_path])
+            src = os.sep.join([path, original_path])
             if args.archive:
                 dst1 = os.sep.join(
-                    [args.archive, ", ".join([row[12], str(row[8]), row[9]])])
-                src1 = os.sep.join([args.archive, row[13]])
+                    [args.archive, human_path])
+                src1 = os.sep.join([args.archive, original_path])
 
         if args.verbose:
             print "Renaming folder %s to %s" % (src, dst)
