@@ -22,27 +22,34 @@ parser.add_argument(
     '-V',
     '--version',
     action='version',
-    version='%(prog)s 1.1')
+    version='%(prog)s 1.2')
 
 args = parser.parse_args()
 
+def timestamp_to_datetime(timestamp):
+    if timestamp >=0:
+        return datetime.datetime.fromtimestamp(timestamp)
+    else: # Workaround for Windows 
+        return datetime.datetime(1970,1,1) + datetime.timedelta(seconds=int(timestamp))
 
-def get_folders(c, undo):
+def rename_folder(c, undo):
+    print "Renaming folders..."
     paths=[]
     for row in c.execute('SELECT ZPATIENTID, ZFIRSTNAME, ZLASTNAME, ZGENDER, strftime("%Y-%m-%d",ZDOB), ZDOB, strftime("%Y-%m-%d",\'now\') FROM ZPATIENTINFO'):
         original_path=row[0]
-        human_path=", ".join([row[2],row[1],row[3], "(" + time.strftime("%Y-%m-%d", time.localtime(row[5]+978307200)) + ")",row[0]])
+        time1 = timestamp_to_datetime(row[5]+978307200 + 12*60*60)
+        #print row[5],row[5]+978307200+12*60*60, time1
+        human_path=", ".join([row[2],row[1],row[3], "(" + "-".join([str(time1.year),str(time1.month).zfill(2),str(time1.day).zfill(2)]) + ")",row[0]])
         paths.append((original_path,human_path))
     return paths
 
 
 def rename_files(c, undo):
-    paths_dictionaries=get_folders(conn.cursor(), args.undo)
-    full_paths_dictionaries = []
+    paths_dictionaries=rename_folder(conn.cursor(), args.undo)
     print "Renaming files..."
     
-    for row in c.execute('SELECT * FROM ZVISITRECORDS'):
-        old_full_path_with_filename = row[18].split("/")[-2:]
+    for row in c.execute('SELECT ZISARCHIVED, ZLASTMODIFIEDDATE, ZRECORDPATH FROM ZVISITRECORDS'):
+        old_full_path_with_filename = row[2].split("/")[-2:]
         extension = old_full_path_with_filename[1].split(".")[-1:][0]
         old_relative_path = old_full_path_with_filename[0]
         old_filename = old_full_path_with_filename[1]
@@ -54,12 +61,12 @@ def rename_files(c, undo):
                 break
         
         t = time.localtime(
-            row[14] + datetime.timedelta(365 * 31 + 8).total_seconds())
-        microseconds = str(row[15]).split(".")[1]
+            row[1] + datetime.timedelta(365 * 31 + 8).total_seconds())
+        microseconds = str(row[1]).split(".")[1]
         new_filename = os.sep.join(
-            ["%s %s.%s" % (time.strftime("%Y-%m-%d %H-%M-%S", t), microseconds, extension)])
+            ["%s %s.%s" % (time.strftime("%Y-%m-%d %H-%M-%S", t), microseconds.zfill(3), extension)])
             
-        if row[4]:
+        if row[0]:
             if not args.archive:
                 continue
             old_full_path = os.sep.join([args.archive, old_relative_path])
@@ -75,7 +82,6 @@ def rename_files(c, undo):
             dst = os.sep.join([new_full_path, new_filename])
             src = os.sep.join([old_full_path, old_filename])
         
-        full_paths_dictionaries.append((src,dst))
         if args.verbose:
             print "Renaming %s to %s" % (src, dst)
         try:
