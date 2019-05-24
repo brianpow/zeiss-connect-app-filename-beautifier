@@ -60,9 +60,11 @@ def rename_files(c, undo):
                 new_relative_path = value
                 break
         
-        t = time.localtime(
-            row[1] + datetime.timedelta(365 * 31 + 8).total_seconds())
-        microseconds = str(row[1]).split(".")[1]
+        t = time.localtime(row[1] + datetime.timedelta(365 * 31 + 8).total_seconds())
+        try:
+            microseconds = str(row[1]).split(".")[1]
+        except:
+            microseconds="0"
         new_filename = os.sep.join(
             ["%s %s.%s" % (time.strftime("%Y-%m-%d %H-%M-%S", t), microseconds.zfill(3), extension)])
             
@@ -82,13 +84,25 @@ def rename_files(c, undo):
             dst = os.sep.join([new_full_path, new_filename])
             src = os.sep.join([old_full_path, old_filename])
         
-        if args.verbose:
-            print "Renaming %s to %s" % (src, dst)
         try:
             if not args.dryrun:
-                os.renames(src, dst)
-        except OSError:
+                if(os.path.isfile(src)):
+                    if (os.path.isfile(dst)):
+                        if args.verbose:
+                            print "Overwriting %s to %s" % (src, dst)
+                            os.remove(dst)
+                    else:
+                        if args.verbose:
+                            print "Renaming %s to %s" % (src, dst)
+                    os.renames(src, dst)
+                else:
+                    print "Source not found, skip renaming %s to %s" % (src, dst)
+                    
+        except Exception as ex:
             print "Error occured when renaming %s to %s" % (src, dst)
+            template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+            message = template.format(type(ex).__name__, ex.args)
+            print message
 
 
 for path in args.paths:
