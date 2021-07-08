@@ -33,7 +33,7 @@ def timestamp_to_datetime(timestamp):
         return datetime.datetime(1970,1,1) + datetime.timedelta(seconds=int(timestamp))
 
 def rename_folder(c, undo):
-    print "Renaming folders..."
+    print("Renaming folders...")
     paths=[]
     for row in c.execute('SELECT ZPATIENTID, ZFIRSTNAME, ZLASTNAME, ZGENDER, strftime("%Y-%m-%d",ZDOB), ZDOB, strftime("%Y-%m-%d",\'now\') FROM ZPATIENTINFO'):
         original_path=row[0]
@@ -46,7 +46,7 @@ def rename_folder(c, undo):
 
 def rename_files(c, undo):
     paths_dictionaries=rename_folder(conn.cursor(), args.undo)
-    print "Renaming files..."
+    print("Renaming files...")
     
     for row in c.execute('SELECT ZISARCHIVED, ZLASTMODIFIEDDATE, ZRECORDPATH FROM ZVISITRECORDS'):
         old_full_path_with_filename = row[2].split("/")[-2:]
@@ -89,20 +89,20 @@ def rename_files(c, undo):
                 if(os.path.isfile(src)):
                     if (os.path.isfile(dst)):
                         if args.verbose:
-                            print "Overwriting %s to %s" % (src, dst)
+                            print("Overwriting %s to %s" % (src, dst))
                             os.remove(dst)
                     else:
                         if args.verbose:
-                            print "Renaming %s to %s" % (src, dst)
+                            print("Renaming %s to %s" % (src, dst))
                     os.renames(src, dst)
                 else:
-                    print "Source not found, skip renaming %s to %s" % (src, dst)
+                    print("Source not found, skip renaming %s to %s" % (src, dst))
                     
         except Exception as ex:
-            print "Error occured when renaming %s to %s" % (src, dst)
+            print("Error occured when renaming %s to %s" % (src, dst))
             template = "An exception of type {0} occurred. Arguments:\n{1!r}"
             message = template.format(type(ex).__name__, ex.args)
-            print message
+            print(message)
 
 
 for path in args.paths:
@@ -110,9 +110,9 @@ for path in args.paths:
                         'Documents'])
     db = os.sep.join([path, 'SingleViewCoreData.sqlite'])
     if not os.path.isfile(db):
-        print "Unable to locate database file at %s" % (db)
+        print("Unable to locate database file at %s" % (db))
         continue
 
-    print "Processing %s..." % (db)
+    print("Processing %s..." % (db))
     conn = sqlite3.connect(db)  # ,detect_types=sqlite3.PARSE_DECLTYPES)
     rename_files(conn.cursor(), args.undo)
