@@ -35,5 +35,9 @@ For additional features, see help
 python zcafb.py -h
 ``` 
 
+## Limitation
+
+- New Connect App will encrypt the SQLite DB and is not currently supported. Unless the key can be found
+
 ## Licence
 AGPL v3.0
